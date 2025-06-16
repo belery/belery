@@ -31,6 +31,7 @@ class Embeddings (nn.Module):
         return self.lut(x) * math.sqrt(self.d_model)
 
 
+
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, dropout, max_len=5000):
         #d_model：嵌入词纬度
@@ -54,12 +55,33 @@ class PositionalEncoding(nn.Module):
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
 
+        #二维变成三维
         pe = pe.unsqueeze(0)
 
-# d_model = 512
-# vocab = 1000
-#
-# x = Variable(torch.LongTensor([[100, 2, 421, 508],[491, 998, 1, 221]]))
-# emb = Embeddings(d_model, vocab)
-# embr = emb()
+        #将位置编码注册成buffer，不随优化器而更新
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        # x:文本的词嵌入表示
+        x = x + Variable(self.pe[:, :x.size(1)], requires_grad=False)
+
+d_model = 512
+vocab = 1000
+
+x = Variable(torch.LongTensor([[100, 2, 421, 508],[491, 998, 1, 221]]))
+emb = Embeddings(d_model, vocab)
+embr = emb(x)
+print(embr)
+
+d_model = 512
+dropout = 0.1
+max_len = 60
+
+x = embr
+pe = PositionalEncoding(d_model, dropout, max_len)
+pe_result = pe(x)
+print(pe_result)
+
+
+
 
